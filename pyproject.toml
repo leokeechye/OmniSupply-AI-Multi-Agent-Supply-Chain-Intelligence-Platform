@@ -43,4 +43,5 @@ dependencies = [
     "jupyter-client>=8.6.0",
     "openai>=1.0.0,<2.0.0",
     "streamlit>=1.57.0",
+    "faker>=40.19.1",
 ]
