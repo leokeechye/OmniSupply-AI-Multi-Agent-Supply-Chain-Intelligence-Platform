@@ -34,7 +34,8 @@ from typing import List
 from dotenv import load_dotenv
 from faker import Faker
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 from src.data.models import (
     FinancialTransaction,
@@ -221,7 +222,8 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Generate + count, no DB writes.")
     args = parser.parse_args()
 
-    load_dotenv()
+    # Load .env from the repo root so the script works regardless of CWD.
+    load_dotenv(_REPO_ROOT / ".env")
 
     print(f"Generating: {args.orders} orders, {args.shipments} shipments, "
           f"{args.inventory} inventory items, {args.transactions} transactions…")
