@@ -34,6 +34,7 @@ st.caption(
 
 
 EXAMPLE_QUERIES = [
+    "Which carriers have the highest delay rates and which order regions are most affected? Recommend 3 actions.",
     "Generate a weekly executive report with top risks, financial KPIs, and recommended actions.",
     "What are the current supply chain risks and which stakeholders should be alerted?",
     "Show me the top 5 product categories by revenue this quarter.",
