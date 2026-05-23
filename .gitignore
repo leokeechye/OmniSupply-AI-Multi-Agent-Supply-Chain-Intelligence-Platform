@@ -9,8 +9,9 @@ __pycache__/
 # claude AI files
 .claude/
 
-# data
-data/
+# data (only the root-level data/ directory of CSVs — bare `data/` would also
+# match src/data/, which is application code that must be tracked)
+/data/
 
 # Distribution / packaging
 .Python
