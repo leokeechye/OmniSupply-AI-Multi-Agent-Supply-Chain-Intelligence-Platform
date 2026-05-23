@@ -90,11 +90,18 @@ def _id(row_id: float, prefix: str = "INC") -> str:
     return f"{prefix}-{int(round(row_id * 1000)):011d}"
 
 
+_DATE_SHIFT_YEARS = 9  # INCOM data is 2015–2018; shift +9y → 2024–2027 so
+                       # LLM-generated "last 30 days" / "Q1 2024" queries hit data.
+
+
 def _parse_dt(s: str) -> datetime:
-    """Parse INCOM datetime '2015-08-12 00:00:00+01:00' → naive datetime UTC-ish."""
-    dt = datetime.fromisoformat(s)
-    # Strip tz for SQLAlchemy compatibility with the DateTime column
-    return dt.replace(tzinfo=None)
+    """Parse INCOM datetime '2015-08-12 00:00:00+01:00', strip tz, shift to recent."""
+    dt = datetime.fromisoformat(s).replace(tzinfo=None)
+    # Pure year arithmetic via replace() avoids leap-day issues for Feb 29
+    try:
+        return dt.replace(year=dt.year + _DATE_SHIFT_YEARS)
+    except ValueError:  # Feb 29 in a non-leap year after shift
+        return dt.replace(month=2, day=28, year=dt.year + _DATE_SHIFT_YEARS)
 
 
 def _ship_status(order_status: str, label: int) -> str:
