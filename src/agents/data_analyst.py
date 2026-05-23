@@ -168,15 +168,18 @@ class DataAnalystAgent(BaseAgent):
         return workflow.compile()
 
     def get_capabilities(self) -> List[str]:
-        """Return agent capabilities"""
+        """Return agent capabilities. Phrased to surface in supervisor routing
+        whenever the user asks for concrete numbers / breakdowns / ranked lists."""
         return [
-            "SQL query generation from natural language",
-            "Data aggregation and analysis",
-            "Trend identification",
-            "Anomaly detection",
-            "Data visualization recommendations",
-            "KPI calculation",
-            "Comparative analysis"
+            "Quantitative breakdowns: ranked lists, top-N, by-group aggregations",
+            "Carrier performance metrics (delay rate, on-time rate by carrier)",
+            "Region / state / country / segment breakdowns of orders, shipments, transactions",
+            "Revenue, profit, sales aggregations by category, sub-category, segment, time period",
+            "Trend analysis over time (daily / weekly / monthly / quarterly)",
+            "Anomaly detection in orders, shipments, financial transactions",
+            "KPI calculation: delay rate, return rate, profit margin, average order value",
+            "Comparative analysis (period-over-period, region-vs-region, carrier-vs-carrier)",
+            "SQL query generation from natural language against orders / shipments / inventory / financial_transactions",
         ]
 
     def can_handle(self, query: str) -> float:
