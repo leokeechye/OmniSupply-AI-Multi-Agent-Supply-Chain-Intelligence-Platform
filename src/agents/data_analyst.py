@@ -18,6 +18,37 @@ from ..storage.vector.chromadb_client import OmniSupplyVectorStore
 logger = logging.getLogger(__name__)
 
 
+# Authoritative schema description used in both query classification + SQL
+# generation prompts. Columns mirror src/storage/sql/models.py exactly —
+# DO NOT drift; an incorrect column name here makes the LLM emit SQL that
+# silently returns 0 rows.
+_SCHEMA_DESCRIPTION = """Available tables and columns (PostgreSQL):
+
+- orders: order_id, order_date, ship_mode, segment, country, city, state, postal_code,
+    region, category, sub_category, product_id, cost_price, list_price, quantity,
+    discount_percent, discount, sale_price, profit, is_returned
+- shipments: shipment_id, product_id, origin_port, destination_port, carrier,
+    shipment_date, expected_delivery, actual_delivery, quantity, weight_kg,
+    freight_cost, insurance_cost, customs_cost, status, delay_reason
+- inventory: sku, product_id, product_name, category, warehouse_location,
+    stock_quantity, reorder_level, reorder_quantity, unit_cost, last_restock_date,
+    lead_time_days, supplier_id
+- financial_transactions: transaction_id, transaction_date, transaction_type,
+    category, subcategory, amount, currency, cost_center, business_unit,
+    payment_method, vendor_id, notes
+
+Enum / value notes:
+- shipments.status: 'delivered', 'in_transit', 'delayed', 'cancelled'
+- orders.ship_mode: 'Standard Class', 'First Class', 'Second Class', 'Same Day'
+- orders.segment: 'Consumer', 'Corporate', 'Home Office'
+- financial_transactions.transaction_type: 'revenue', 'expense', 'refund', 'adjustment'
+- financial_transactions.amount: positive for revenue; negative for expense/refund/adjustment
+
+Data date range: orders / shipments / financial_transactions span ~2024-01 to
+2027-12. Inventory.last_restock_date is current (2026). Filters like "last 30
+days" or "this quarter" will return rows."""
+
+
 # Pydantic models for structured outputs
 class QueryEntities(BaseModel):
     """Entities extracted from query"""
@@ -178,11 +209,7 @@ class DataAnalystAgent(BaseAgent):
 
 User Query: {state['user_query']}
 
-Available tables and columns:
-- orders: order_id, order_date, category, product_id, sale_price, profit, quantity, discount_percent, is_returned, segment, region, state, shipping_mode
-- shipments: shipment_id, carrier, shipment_date, expected_delivery, actual_delivery, status, origin_location, destination_location, freight_cost
-- inventory: sku, product_id, product_name, stock_quantity, reorder_level, warehouse_location, unit_cost, supplier_id
-- financial_transactions: transaction_id, transaction_date, transaction_type, category, subcategory, amount, currency, cost_center, business_unit, payment_method, vendor_id, notes
+{_SCHEMA_DESCRIPTION}
 
 Determine:
 1. Query type (aggregation, trend, comparison, anomaly, detail)
@@ -230,11 +257,7 @@ Classification:
 - Filters: {', '.join(classification.entities.filters) if classification.entities.filters else 'None'}
 - Time Period: {classification.entities.time_period or 'Not specified'}
 
-Available tables:
-- orders (order_id, order_date, category, product_id, sale_price, profit, quantity, discount_percent, is_returned, segment, region, state, shipping_mode)
-- shipments (shipment_id, carrier, shipment_date, expected_delivery, actual_delivery, status, origin_location, destination_location, freight_cost)
-- inventory (sku, product_id, product_name, stock_quantity, reorder_level, warehouse_location, unit_cost, supplier_id)
-- financial_transactions (transaction_id, transaction_date, transaction_type, category, subcategory, amount, currency, cost_center, business_unit, payment_method, vendor_id, notes)
+{_SCHEMA_DESCRIPTION}
 
 Generate valid PostgreSQL SQL. Use proper date functions (e.g., DATE_TRUNC, INTERVAL). Limit results to 100 rows.{error_context}
 """
