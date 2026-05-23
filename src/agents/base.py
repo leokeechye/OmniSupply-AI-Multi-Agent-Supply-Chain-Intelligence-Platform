@@ -134,10 +134,16 @@ class BaseAgent(ABC):
         initial_state = self._prepare_state(query, context, session_id)
 
         try:
-            # Execute graph
+            # Execute graph. Tool-using agents (data_analyst, risk_agent, finance_agent)
+            # can loop call_tool→analyze_result more than LangGraph's default 25 ceiling
+            # on complex queries — bumped to 100. Env var override for tuning per-deploy.
+            recursion_limit = int(os.getenv("LANGGRAPH_RECURSION_LIMIT", "100"))
             final_state = self.graph.invoke(
                 initial_state,
-                config={"callbacks": [OpikTracer(project_name=OPIK_PROJECT_NAME)]}
+                config={
+                    "callbacks": [OpikTracer(project_name=OPIK_PROJECT_NAME)],
+                    "recursion_limit": recursion_limit,
+                },
             )
 
             # Format result

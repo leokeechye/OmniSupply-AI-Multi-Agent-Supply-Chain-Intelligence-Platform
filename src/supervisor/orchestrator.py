@@ -521,7 +521,14 @@ Make it executive-friendly: clear, concise, actionable.
             "error": None
         }
 
-        result = self.graph.invoke(initial_state, config={"callbacks": [OpikTracer(project_name=OPIK_PROJECT_NAME)]})
+        recursion_limit = int(os.getenv("LANGGRAPH_RECURSION_LIMIT", "100"))
+        result = self.graph.invoke(
+            initial_state,
+            config={
+                "callbacks": [OpikTracer(project_name=OPIK_PROJECT_NAME)],
+                "recursion_limit": recursion_limit,
+            },
+        )
 
         logger.info("✅ Supervisor execution complete")
 
