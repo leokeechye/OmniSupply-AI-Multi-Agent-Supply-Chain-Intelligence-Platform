@@ -284,11 +284,22 @@ def main() -> int:
     _clear_non_inventory(db)
 
     log.info("Inserting orders…")
-    db.upsert_orders(orders)
-    log.info("Inserting shipments…")
-    db.insert_shipments(shipments)
-    log.info("Inserting transactions…")
-    db.insert_transactions(transactions)
+    db.upsert_orders(orders)  # already batches internally
+
+    # insert_shipments / insert_transactions push all rows in one transaction —
+    # too slow over Railway's public proxy. Batch them here.
+    BATCH = 1000
+    log.info(f"Inserting shipments in batches of {BATCH}…")
+    for i in range(0, len(shipments), BATCH):
+        chunk = shipments[i : i + BATCH]
+        db.insert_shipments(chunk)
+        log.info(f"  shipments {i + len(chunk):,}/{len(shipments):,}")
+
+    log.info(f"Inserting transactions in batches of {BATCH}…")
+    for i in range(0, len(transactions), BATCH):
+        chunk = transactions[i : i + BATCH]
+        db.insert_transactions(chunk)
+        log.info(f"  transactions {i + len(chunk):,}/{len(transactions):,}")
 
     counts = db.get_table_counts()
     log.info("DB now contains:")
